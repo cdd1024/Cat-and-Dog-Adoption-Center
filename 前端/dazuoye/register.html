@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+	<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+
+    <style>
+        .loginBody {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: url(../img/1716643713334.jpg);
+            background-size: 100% 100%;
+        }
+
+        .loginDiv {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 450px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 5%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            backdrop-filter: blur(2px);
+            /* 添加毛玻璃效果，模糊值可根据需要进行调整 */
+        }
+
+        .login-title {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .login-content {
+            width: 350px;
+            height: 400px;
+            position: absolute;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+	<div id="app">
+    <div class="loginBody">
+        <div class="loginDiv">
+            <div class="login-content">
+                <h1 class="login-title">注册</h1>
+                <el-form :model="userForm" label-width="100px" :rules="rules" ref="userForm">
+                    <el-form-item label="用户账号" prop="userA">
+                        <el-input style="width: 200px" type="text" v-model="userForm.userA" autocomplete="off"
+                            size="small"></el-input>
+                    </el-form-item>
+                    <el-form-item label="用户密码" prop="userPwd">
+                        <el-input style="width: 200px" type="password" v-model="userForm.userPwd" show-password
+                            autocomplete="off" size="small" ></el-input>
+                    </el-form-item>
+					<el-form-item label="用户性别" prop="shenfen">
+					    <el-input style="width: 200px" type="text" v-model="userForm.shenfen" 
+					        autocomplete="off" size="small" ></el-input>
+					</el-form-item>
+					<el-form-item label="联系方式" prop="phone">
+					    <el-input style="width: 200px" type="text" v-model="userForm.phone" 
+					        autocomplete="off" size="small" @keyup.enter.native="reForm"></el-input>
+					</el-form-item>
+					
+					
+					
+					
+<el-button type="primary" @click="reForm"  style="margin-right:50px">注册</el-button>
+                            <el-button type="success" @click="login">登录</el-button>
+                    <el-form-item>
+                        
+                    </el-form-item>
+                </el-form>
+            </div>
+        </div>
+    </div>
+	</div>
+	
+	<script src="../js/vue.js"></script>
+	<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+	<script src="../js/axios.min.js"></script>
+	<script>
+		axios.defaults.withCredentials = true;
+		
+		new Vue({
+			el:'#app',
+			data:{
+				
+				userForm:{
+					userA:'cdd',
+					userPwd:'123456',
+					shenfen:'11',
+					phone:'22222222222'
+				},
+				rules:{
+					userA:[{
+						required:true,
+						message:'请输入您的姓名~',
+						trigger:'blur'
+					},{
+						max:10,
+						min:2,
+						message:'请输入2~10个字符',
+						trigger: 'blur'
+					}
+					],
+					userPwd:[{
+						required:true,
+						message:'请输入您的密码~',
+						trigger:'blur'
+					},{
+						min:6,
+						message:'请至少输入6位密码',
+						trigger: 'blur'
+					}
+					],
+					phone:[{
+						required:true,
+						message:'请输入您的手机号~',
+						trigger:'blur'
+					},
+					{
+						max:11,
+						min:11,
+						  message: '请输入正确的手机号格式',
+						  trigger: 'blur'
+					}]
+				}
+				
+			},
+			methods:{
+				reForm() {
+					let fd=new FormData();
+					 fd.append('userA',this.userForm.userA);
+					 fd.append('userPwd',this.userForm.userPwd);
+					 fd.append('shenfen',this.userForm.shenfen);
+					 fd.append('phone',this.userForm.phone);
+					
+					 axios.post('http://localhost:9000/user/register',fd).then(res=>{
+						 if(res.data.isOk){
+							this.$message({
+								showClose: true,
+							          message: '注册成功',
+							          type: 'success'
+							        });
+						  location.href='menu.html';
+						 }else{
+							 this.$message.error('注册失败');
+						 }
+					 })
+				},
+				login(){
+					location.href='login.html';
+				}
+				}
+				
+			
+		
+		})
+	</script>
+	
+	
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>分页表格</title>
+  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+
+<div id="app">
+  <!-- 表格 -->
+  <el-table :data="pagedUsers" border style="width: 100%">
+    <el-table-column fixed prop="userId" label="编号" width="70">
+    </el-table-column>
+    <el-table-column prop="userA" label="用户姓名" width="300">
+    </el-table-column>
+    <el-table-column prop="userPwd" label="用户密码" width="120">
+    </el-table-column>
+    <el-table-column prop="shenfen" label="用户性别" width="100">
+    </el-table-column>
+    <el-table-column prop="phone" label="用户电话" width="500">
+    </el-table-column>
+  </el-table>
+
+  <!-- 分页组件 -->
+  <el-pagination
+    @size-change="handleSizeChange"
+    @current-change="handleCurrentChange"
+    :current-page="pagination.currentPage"
+    :page-sizes="[5, 10, 20, 50]"
+    :page-size="pagination.pageSize"
+    layout="total, sizes, prev, pager, next, jumper"
+    :total="users.length"
+  ></el-pagination>
+</div>
+
+<script src="../js/vue.js"></script>
+<script src="../js/axios.min.js"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script>
+  axios.defaults.withCredentials = true;
+
+  new Vue({
+    el: '#app',
+    data() {
+      return {
+        users: [],
+        pagination: {
+          currentPage: 1,
+          pageSize: 5,
+          totalCount: 0
+        }
+      };
+    },
+    computed: {
+      pagedUsers() {
+        const start = (this.pagination.currentPage - 1) * this.pagination.pageSize;
+        const end = start + this.pagination.pageSize;
+        return this.users.slice(start, end);
+      }
+    },
+    methods: {
+      handleSizeChange(val) {
+        this.pagination.pageSize = val;
+      },
+      handleCurrentChange(val) {
+        this.pagination.currentPage = val;
+      },
+      loadUsers() {
+        axios.get('http://localhost:9000/user/list')
+          .then(res => {
+            if (res.data.isOk) {
+              this.$message({
+                showClose: true,
+                message: '加载成功'
+              });
+              this.users = res.data.users;
+            }
+          })
+          .catch(error => {
+            console.error('Error loading users: ', error);
+          });
+      }
+    },
+    created() {
+      this.loadUsers();
+    }
+  });
+</script>
+</body>
+</html>

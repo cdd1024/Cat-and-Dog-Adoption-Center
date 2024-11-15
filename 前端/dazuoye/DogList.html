@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+	</head>
+	<body>
+
+		<div id="app">
+			<div style="display: flex; align-items: center;">
+				<el-button type="primary" style="background-color: #545c64;" @click="loadDogs">显示全部</el-button>
+
+				<el-button type="primary" style="background-color: #545c64;" icon="el-icon-search" @click="queDog">搜索</el-button>
+				<el-input v-model="queinput" placeholder="请输入查询Id" style="width: 300px;"></el-input>
+			</div>
+			
+			<template>
+				<!--添加-->
+				<el-popover placement="dog" width="800" v-model="visible_add">
+					<el-form :model="dogForm" :rules="rules" ref="dogForm" label-width="200px" class="demo-ruleForm">
+						<el-form-item label="种类" prop="breed">
+							<el-input v-model="dogForm.breed"></el-input>
+						</el-form-item>
+						<el-form-item label="价格" prop="price">
+							<el-input v-model="dogForm.price"></el-input>
+						</el-form-item>
+						<el-form-item label="描述" prop="desc">
+							<el-input v-model="dogForm.desc"></el-input>
+						</el-form-item>
+
+						<el-form-item>
+							<el-button type="primary" @click.prevent="addDog()">立即添加</el-button>
+						</el-form-item>
+
+					</el-form>
+					<el-link icon="el-icon-edit" slot="reference">添加狗狗</el-link>
+				</el-popover>
+				<!--表格-->
+				<el-table :data="dogs" border style="width: 100%">
+					<el-table-column fixed prop="dogId" label="编号" width="70">
+					</el-table-column>
+					<el-table-column prop="breed" label="种类" width="300">
+					</el-table-column>
+					<el-table-column prop="price" label="价格" width="120">
+					</el-table-column>
+					<el-table-column prop="desc" label="描述" width="500">
+					</el-table-column>
+
+					<el-table-column label="操作" width="300">
+						<template slot-scope="scope">
+							
+							<el-button type="info" icon="el-icon-delete" @click.native.prevent="delDog(scope.row.dogId)">删除</el-button>
+							<el-button type="info" icon="el-icon-edit"  @click.native.prevent="modDog(scope.row)">编辑</el-button>
+						</template>
+					</el-table-column>
+				</el-table>
+				
+				<!--修改-->
+				<el-dialog :visible.sync="editDialogVisible" title="编辑书本信息">
+					<el-form :model="editDogForm" :rules="rules" label-width="80px">
+						<el-form-item label="小狗编号" prop="dogId">
+							<el-input v-model="editDogForm.dogId" style="color: 	#FF8C00;" readonly></el-input>
+						</el-form-item>
+						<el-form-item label="种类" prop="breed">
+							<el-input v-model="editDogForm.breed"></el-input>
+						</el-form-item>
+						<el-form-item label="价格" prop="price">
+							<el-input v-model="editDogForm.price"></el-input>
+						</el-form-item>
+						<el-form-item label="描述">
+							<el-input v-model="editDogForm.desc"></el-input>
+						</el-form-item>
+					</el-form>
+					<div slot="footer" class="dialog-footer">
+						<el-button @click="editDialogVisible = false">取消</el-button>
+						<el-button type="primary" @click="saveEditedDog">保存</el-button>
+					</div>
+				</el-dialog>
+				</template>
+		</div>
+
+
+		<script src="../js/vue.js"></script>
+		<script src="../js/axios.min.js"></script>
+		<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+		<script>
+			axios.defaults.withCredentials = true;
+			new Vue({
+				el: '#app',
+				data: {
+					queinput:'',
+					editDialogVisible: false,
+					dogs: [],
+					visible_add: false,
+					dogForm:{
+						breed:'',
+						price:null,
+						desc:null
+					},
+					rules:{
+						breed:[{
+							requeired:true,
+							message: '请输入狗狗的种类',
+							trigger: 'blur'
+						},
+						],
+						price:[{
+							required: true,
+							message: '请输入价格',
+							trigger: 'blur'
+						}]
+					},
+					visible_add: false,
+					editDogForm:{
+						dogId:'',
+						breed:'',
+						price:'',
+						desc:''
+					}
+
+				},
+				methods: {
+					loadDogs() {
+						axios.get('http://localhost:9000/dog/list').then(res => {
+							if (res.data.isOk) {
+								this.$message({
+								  showClose: true,
+								  message: '加载成功'
+								});
+								this.dogs = res.data.dogs;
+							}
+						})
+					},
+					delDog(id) {
+						 this.$confirm('是否删除该狗狗？', '提示', {
+						          confirmButtonText: '确定',
+						          cancelButtonText: '取消',
+						          type: 'warning'
+						        }).then(() => {
+						          // 如果用户点击了确定按钮，则发送删除请求
+						          axios.get('http://localhost:9000/dog/del', { params: { id } })
+						            .then(res => {
+						              // 删除成功后显示成功提示信息，并重新加载狗狗列表
+						              this.$message({
+						                showClose: true,
+						                message: '删除成功',
+						                type: 'success'
+						              });
+						              this.loadDogs();
+						            })
+						            .catch(err => {
+						              // 如果发生错误，显示错误提示信息
+						              this.$message.error('删除失败：' + err.message);
+						            });
+						        }).catch(() => {
+						          // 如果用户点击了取消按钮，则不执行任何操作
+						          this.$message({
+						            showClose: true,
+						            message: '已取消删除',
+						            type: 'info'
+						          });
+						        });
+						      
+					},
+					addDog(){
+						let fd = new FormData();
+						
+						fd.append('breed', this.dogForm.breed);
+						fd.append('price', this.dogForm.price);
+						fd.append('desc', this.dogForm.desc);
+						if (!this.dogForm.breed) {
+						        this.$message({
+									showClose: true,
+						                  message: '种类不能为空',
+						                  type: 'warning'
+						                });
+						        return;
+						    }
+						if (!this.dogForm.price) {
+						        this.$message({
+									showClose: true,
+						                  message: '价格不能为空',
+						                  type: 'warning'
+						                });
+						        return;
+						    }
+						axios.post('http://localhost:9000/dog/add', fd).then(res => {
+							if (res.data.isOk) {
+								this.visible_add = false;
+								this.$message({
+								          showClose: true,
+								          message: '添加成功',
+								          type: 'success'
+								        });
+								this.loadDogs();
+							}
+						})
+					},
+					saveEditedDog() {
+						let fd = new FormData();
+						fd.append('dogId', this.editDogForm.dogId);
+						fd.append('breed', this.editDogForm.breed);
+						fd.append('price', this.editDogForm.price);
+						fd.append('desc', this.editDogForm.desc);
+						axios.post('http://localhost:9000/dog/update', fd).then(res => {
+							if (res.data.isOk) {
+								this.editDialogVisible = false;
+								this.$message({
+								          showClose: true,
+								          message: '修改成功',
+								          type: 'success'
+								        });
+								this.loadDogs()
+							}
+						})
+					},
+					modDog(dog){
+						this.editDogForm={
+							dogId:dog.dogId,
+							breed:dog.breed,
+							price:dog.price,
+							desc:dog.desc
+						};
+						this.editDialogVisible = true;
+					},
+					queDog(){
+						let id=this.queinput;
+						axios.get('http://localhost:9000/dog/que', {
+							params: {
+								id
+							}
+						}).then(res => {
+							if(res.data.isOk)
+							{
+								this.dogs=res.data.dogs;
+								this.$message({
+									showClose: true,
+									type: 'success',
+									message: '查询成功!',
+								});
+							}
+						})
+					}
+				},
+				created() {
+					this.loadDogs()
+				}
+			})
+		</script>
+	</body>
+</html>

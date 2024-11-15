@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+		<style>
+			.center {
+				text-align: center;
+			}
+		</style>
+		
+	</head>
+	<body>
+		<div id="app">
+			
+		<div style="display: flex; align-items: center;">
+			<el-button type="primary" style="background-color: #545c64;" @click="loadBooks">显示全部</el-button>
+			<el-button type="primary" style="background-color: #545c64;" icon="el-icon-search" @click="queBook">搜索</el-button>
+			<el-input v-model="queinput" placeholder="请输入想要查询的猫猫id" style="width: 300px;"></el-input>
+		</div>
+			
+			
+			
+			<template>
+				<el-popover placement="book" width="800" v-model="visible_add">
+					<el-form :model="booksForm" :rules="rules" ref="booksForm" label-width="200px" class="demo-ruleForm">
+						<el-form-item label="品种" prop="title">
+							<el-input v-model="booksForm.title"></el-input>
+						</el-form-item>
+						<el-form-item label="价格" prop="price">
+							<el-input v-model="booksForm.price"></el-input>
+						</el-form-item>
+						<el-form-item label="描述" prop="desc">
+							<el-input v-model="booksForm.desc"></el-input>
+						</el-form-item>
+
+						<el-form-item>
+							<el-button type="primary" @click.prevent="addBook()">立即添加</el-button>
+						</el-form-item>
+
+					</el-form>
+					<el-link icon="el-icon-edit" slot="reference">添加猫猫</el-link>
+				</el-popover>
+				<!--表格-->
+				<el-table :data="books" border style="width: 100%">
+					<el-table-column fixed prop="bookId" label="编号" width="70">
+					</el-table-column>
+					<el-table-column prop="title" label="猫猫品种" width="300">
+					</el-table-column>
+					<el-table-column prop="price" label="价格" width="120">
+					</el-table-column>
+					<el-table-column prop="desc" label="描述" width="500">
+					</el-table-column>
+
+					<el-table-column label="操作" width="300">
+						<template slot-scope="scope">
+							<el-button type="info" icon="el-icon-delete" @click.native.prevent="delBook(scope.row.bookId)">删除</el-button>
+							<el-button type="info" icon="el-icon-edit" @click.native.prevent="modBook(scope.row)">编辑</el-button>
+							
+						</template>
+					</el-table-column>
+				</el-table>
+				<!--修改-->
+
+				<el-dialog :visible.sync="editDialogVisible" title="编辑猫猫信息">
+					<el-form :model="editBookForm" :rules="rules" label-width="80px">
+						<el-form-item label="猫猫编号" prop="bookId">
+							<el-input v-model="editBookForm.bookId" style="color:#FF8C00;" readonly></el-input>
+						</el-form-item>
+						<el-form-item label="猫猫品种" prop="tittle">
+							<el-input v-model="editBookForm.title"></el-input>
+						</el-form-item>
+						<el-form-item label="价格" prop="price">
+							<el-input v-model="editBookForm.price"></el-input>
+						</el-form-item>
+						<el-form-item label="描述">
+							<el-input v-model="editBookForm.desc"></el-input>
+						</el-form-item>
+					</el-form>
+					<div slot="footer" class="dialog-footer">
+						<el-button @click="editDialogVisible = false">取消</el-button>
+						<el-button type="primary" @click="saveEditedBook">保存</el-button>
+					</div>
+				</el-dialog>
+			</template>
+
+
+		</div>
+
+		<script src="../js/axios.min.js"></script>
+		<script src="../js/vue.js"></script>
+		<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+		<script>
+			axios.defaults.withCredentials = true;
+			new Vue({
+				el: '#app',
+				data: {
+					editDialogVisible: false,
+					editBookForm: { //xiugai 
+						bookId: '',
+						title: '',
+						price: '',
+						desc: ''
+					},
+					books: [],
+					queinput:'',
+					booksForm: {
+						title: '',
+						price: null,
+						desc: null
+					},
+					rules: {
+						title: [{
+								required: true,
+								message: '请输入猫猫名字',
+								trigger: 'blur'
+							}
+						],
+						price: [{
+								required: true,
+								message: '请输入价格',
+								trigger: 'blur'
+							}
+
+						]
+					},
+					visible_add: false
+				},
+				methods: {
+					loadBooks() {
+						this.visible_add = false;
+						this.queinput='',
+						axios.get('http://localhost:9000/book/list').then(res => {
+							if (res.data.isOk) {
+								this.$message({
+								  showClose: true,
+								  message: '加载成功'
+								});
+								this.books = res.data.books;
+							}
+						})
+					},
+					delBook(id) {
+						
+						this.$confirm('是否删除该猫猫？', '提示', {
+						         confirmButtonText: '确定',
+						         cancelButtonText: '取消',
+						         type: 'warning'
+						       }).then(() => {
+						         // 如果用户点击了确定按钮，则发送删除请求
+						         axios.get('http://localhost:9000/book/del', { params: { id } })
+						           .then(res => {
+						             // 删除成功后显示成功提示信息，并重新加载狗狗列表
+						             this.$message({
+						               showClose: true,
+						               message: '删除成功',
+						               type: 'success'
+						             });
+						             this.loadBooks();
+						           })
+						           .catch(err => {
+						             // 如果发生错误，显示错误提示信息
+						             this.$message.error('删除失败：' + err.message);
+						           });
+						       }).catch(() => {
+						         // 如果用户点击了取消按钮，则不执行任何操作
+						         this.$message({
+						           showClose: true,
+						           message: '已取消删除',
+						           type: 'info'
+						         });
+						       });
+					},
+					addBook() {
+						let fd = new FormData();
+						
+						fd.append('title', this.booksForm.title);
+						fd.append('price', this.booksForm.price);
+						fd.append('desc', this.booksForm.desc);
+						if (!this.booksForm.title) {
+						        this.$message({
+									showClose: true,
+						                  message: '品种不能为空',
+						                  type: 'warning'
+						                });
+						        return;
+						    }
+						if (!this.booksForm.price) {
+						        this.$message({
+									showClose: true,
+						                  message: '价格不能为空',
+						                  type: 'warning'
+						                });
+						        return;
+						    }
+						axios.post('http://localhost:9000/book/add', fd).then(res => {
+							
+								
+							if (res.data.isOk) {
+								this.visible_add = false;
+								this.$message({
+									showClose: true,
+								          message: '添加成功',
+								          type: 'success'
+								        });
+								this.loadBooks();
+							}
+						})
+					},
+					saveEditedBook() {
+						let fd = new FormData();
+						fd.append('bookId', this.editBookForm.bookId);
+						fd.append('title', this.editBookForm.title);
+						fd.append('price', this.editBookForm.price);
+						fd.append('desc', this.editBookForm.desc);
+						axios.post('http://localhost:9000/book/update', fd).then(res => {
+							if (res.data.isOk) {
+								this.editDialogVisible = false;
+								this.$message({
+									showClose: true,
+									message: '修改猫猫信息成功',
+									type: 'success'
+								});
+								this.loadBooks()
+							}
+						})
+					},
+					modBook(book) {
+						this.editBookForm = {
+							bookId: book.bookId,
+							title: book.title,
+							price: book.price,
+							desc: book.desc
+						};
+						this.editDialogVisible = true;
+					},
+					queBook(){
+						let id=this.queinput;
+						axios.get('http://localhost:9000/book/que', {
+							params: {
+								id
+							}
+						}).then(res => {
+							if(res.data.isOk)
+							{
+								this.books=res.data.books;
+								this.$message({
+									showClose: true,
+									type: 'success',
+									message: '查询成功!',
+								});
+							}
+						})
+					}
+					
+				},
+
+
+				created() {
+					//Vue对象创建完成时，执行的钩子函数
+					this.loadBooks()
+				}
+
+			})
+		</script>
+	</body>
+</html>
